@@ -15,10 +15,11 @@ fun main() {
         .sortedByDescending { it.second }
         .take(3).sumOf { it.second }
 
-    println(part1(File("src", "Day01_test.txt")))
-    println(part1(File("src", "Day01.txt")))
+    // test if implementation meets criteria from the description, like:
+    println(part1(File("src", "Day02_test.txt")))
+    println(part1(File("src", "Day02.txt")))
 
-    println(part2(File("src", "Day01_test.txt")))
-    println(part2(File("src", "Day01.txt")))
+    println(part2(File("src", "Day02_test.txt")))
+    println(part2(File("src", "Day02.txt")))
 
 }

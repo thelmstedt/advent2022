@@ -1,6 +1,6 @@
-import java.io.File
 import java.math.BigInteger
 import java.security.MessageDigest
+
 
 /**
  * Converts string to md5 hash.
