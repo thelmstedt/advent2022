@@ -1,5 +1,5 @@
 import java.io.File
-import java.util.Stack
+import java.util.*
 
 fun main() {
 
@@ -8,50 +8,39 @@ fun main() {
         val commands = moves.lineSequence()
             .filter { it.isNotBlank() }
             .map { move ->
-                move.replace("move ", "")
-                    .replace("from ", "")
-                    .replace("to ", "")
-                    .split(" ")
-                    .map { it.toInt() }
+                allMatches("[0-9]+".toRegex(), move).map { it.toInt() }
             }.toList()
         return commands
     }
 
     fun stacks(map: String): MutableList<Stack<String>> {
-        val maplines = map.lines()
-        val bucketCount = maplines.last().replace(" ", "").length
-
-        val initialState = maplines
-            .dropLast(1)
-            .filter { it.isNotBlank() }
-            .map { line ->
-                val chunked = line.chunked(4)
-                val cc = (0 until bucketCount).map {
-                    val trim = chunked.getOrNull(it)?.trim()?.replace("[", "")?.replace("]", "")
-                    if (trim?.isBlank() == true) null else trim
-                }.toMutableList()
-                while (cc.size < bucketCount) {
-                    cc.add(null)
-                }
-                cc
-            }.toList()
+        val bucketCount = map.lines().last().replace(" ", "").length
         val columns = mutableListOf<Stack<String>>()
         (0 until bucketCount).forEach { idx ->
             val col = Stack<String>()
             columns.add(col)
         }
+        val mapLines = map.lines()
+            .dropLast(1)
+            .filter { it.isNotBlank() }
+            .map { it.chunked(4) }
+
         (0 until bucketCount).forEach { idx ->
-            initialState.reversed().forEach { state ->
-                state[idx]?.let { columns[idx].push(it) }
+            mapLines.forEach { line ->
+                val box = line.getOrNull(idx)
+                if (!box.isNullOrBlank()) {
+                    columns[idx].push(box.replace("[", "").replace("]", "").trim())
+                }
             }
+        }
+        columns.forEach {
+            it.reverse()
         }
         return columns
     }
 
     fun part1(file: File): Any {
-        val text = file.readText()
-
-        val (map, moves) = text.split("\n\n")
+        val (map, moves) = file.readText().split("\n\n")
 
         println(map)
         println(moves)
@@ -88,54 +77,51 @@ fun main() {
     }
 
     fun part2(file: File): Any {
-        val text = file.readText()
-
-        val (map, moves) = text.split("\n\n")
+        val (map, moves) = file.readText().split("\n\n")
 
         println(map)
         println(moves)
 
         val commands = parseCommands(moves)
-        val columns = stacks(map)
+        val stacks = stacks(map)
 
-        columns.forEach {
+        stacks.forEach {
             println(it)
         }
 
         commands.forEach { (move, from, to) ->
             val popped = mutableListOf<String>()
             (0 until move).forEach { _ ->
-                popped.add(columns[from - 1].pop())
+                popped.add(stacks[from - 1].pop())
             }
             println("XXX $popped from $from to $to")
             popped.reversed().forEach {
-                columns[to - 1].push(it)
+                stacks[to - 1].push(it)
 
             }
 
-            columns.forEach {
+            stacks.forEach {
                 println(it)
             }
 
             println()
         }
 
-        columns.forEach {
+        stacks.forEach {
             println(it)
         }
 
         var answer = ""
-        columns.forEach {
+        stacks.forEach {
             answer += it.pop()
         }
         return answer
     }
 
-
-//    println(part1(File("src", "Day05_test.txt")))
-//    println(part1(File("src", "Day05.txt")))
+    println(part1(File("src", "Day05_test.txt")))
+    println(part1(File("src", "Day05.txt")))
     println(part2(File("src", "Day05_test.txt")))
     println(part2(File("src", "Day05.txt")))
-
 }
+
 
