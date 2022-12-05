@@ -8,7 +8,7 @@ fun main() {
         val commands = moves.lineSequence()
             .filter { it.isNotBlank() }
             .map { move ->
-                allMatches("[0-9]+".toRegex(), move).map { it.toInt() }
+                "[0-9]+".toRegex().allMatches(move).map { it.toInt() }
             }.toList()
         return commands
     }
@@ -23,16 +23,15 @@ fun main() {
         val mapLines = map.lines()
             .dropLast(1)
             .filter { it.isNotBlank() }
-            .map { it.chunked(4) }
-
-        (0 until bucketCount).forEach { idx ->
-            mapLines.forEach { line ->
-                val box = line.getOrNull(idx)
-                if (!box.isNullOrBlank()) {
-                    columns[idx].push(box.replace("[", "").replace("]", "").trim())
+            .forEach { line ->
+                line.drop(1).every(4).forEachIndexed { index, s ->
+                    if (s.isNotBlank()) {
+                        columns[index].push(s)
+                    }
                 }
+
             }
-        }
+
         columns.forEach {
             it.reverse()
         }

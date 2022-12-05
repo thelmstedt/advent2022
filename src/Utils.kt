@@ -2,19 +2,18 @@ import java.math.BigInteger
 import java.security.MessageDigest
 
 
-fun matchingGroups(regex: Regex, x: String, strict: Boolean = false): List<String> {
-    val p = regex.toPattern()
+fun Regex.fullMatchGroups(x: String, strict: Boolean = false): List<String> {
+    val p = this.toPattern()
     val matcher = p.matcher(x)
-    if (!matcher.matches() && strict) error("$x doesn't match $regex and strict is on")
+    if (!matcher.matches() && strict) error("$x doesn't match $this and strict is on")
     val groupCount = matcher.groupCount()
     return (1..groupCount).map {
         matcher.group(it)
     }
 }
 
-fun allMatches(regex: Regex, x: String): List<String> {
-    val p = regex.toPattern()
-    val matcher = p.matcher(x)
+fun Regex.allMatches(x: String): MutableList<String> {
+    val matcher = toPattern().matcher(x)
 
     val xs = mutableListOf<String>()
     while (matcher.find()) {
@@ -22,6 +21,18 @@ fun allMatches(regex: Regex, x: String): List<String> {
     }
     return xs
 }
+
+fun String.every(n: Int): List<String> {
+    val xs = mutableListOf<String>()
+
+    var i = 0
+    while (i < this.length) {
+        xs.add(this.substring(i, i + 1))
+        i += n
+    }
+    return xs
+}
+
 
 /**
  * Converts string to md5 hash.
