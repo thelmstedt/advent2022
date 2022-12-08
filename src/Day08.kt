@@ -2,99 +2,70 @@ import java.io.File
 
 fun main() {
 
+    fun rays(
+        grid: List<List<Int>>,
+        x: Int,
+        y: Int,
+        excludeSelf: Boolean = true,
+    ): List<List<Pair<Int, Int>>> {
+        val height = grid.size
+        val width = grid.first().size
 
-    fun visible(trees: List<Int>, tree: Int): Boolean {
-        return !trees.any { it >= tree }
+        val d = if (excludeSelf) 1 else 0
+        val up = (y - d downTo 0).map { x to it }
+        val down = (y + d until height).map { x to it }
+        val right = (x + d until width).map { it to y }
+        val left = (x - d downTo 0).map { it to y }
+        return listOf(up, left, down, right)
     }
 
-    fun visible2(trees: List<Int>, tree: Int): Int {
-        var c = 0
-        trees.forEach {
-            c += 1
-            if (it >= tree) return c
-        }
-        return c
-    }
+    fun intGrid(text: String): List<List<Int>> = text.lineSequence()
+        .map { row -> row.map { it.digitToInt() } }
+        .toList()
 
     fun part1(file: File) {
-        val map = file.readText()
-
-        val lines = map.lines()
-        val height = lines.size
-        val width = lines.first().length
-
-        val lookup = mutableMapOf<Pair<Int, Int>, Int>()
+        val grid = intGrid(file.readText())
 
         var visible = 0
-        map
-            .lineSequence()
-            .forEachIndexed { y, row ->
-                row.forEachIndexed { x, t ->
-                    lookup[x to y] = t.digitToInt()
+        grid.forEachIndexed { y, row ->
+            row.forEachIndexed { x, tree ->
+                if (rays(grid, x, y).any { it.all { (x, y) -> grid[y][x] < tree } }) {
+                    visible += 1
                 }
             }
-
-        lookup.entries.forEach { (pos, tree) ->
-            val x = pos.first
-            val y = pos.second
-            val up = (0 until y).filter { pos != x to it }.map { lookup[x to it]!! }
-            val down = (y until height).filter { pos != x to it }.map { lookup[x to it]!! }
-            val right = (x until width).filter { pos != it to y }.map { lookup[it to y]!! }
-            val left = (0 until x).filter { pos != it to y }.map { lookup[it to y]!! }
-//            println("$x $y $tree - UP $up - ${visible(up, tree)}")
-//            println("$x $y $tree - DOWN $down - ${visible(down, tree)} ")
-//            println("$x $y $tree - RIGHT $right - ${visible(right, tree)} ")
-//            println("$x $y $tree - LEFT $left - ${visible(left, tree)} ")
-
-            if (visible(up, tree) || visible(down, tree) || visible(right, tree) || visible(left, tree)) {
-                visible += 1
-            }
         }
-        print(visible)
+        println(visible)
+    }
+
+    fun rayScore(
+        grid: List<List<Int>>,
+        tree: Int,
+        ray: List<Pair<Int, Int>>,
+    ): Int {
+        var score = 0
+        ray.forEach { (x, y) ->
+            score += 1
+            if (grid[y][x] >= tree) return score
+        }
+        return score
     }
 
     fun part2(file: File) {
-        val map = file.readText()
+        val grid = intGrid(file.readText())
 
-        val lines = map.lines()
-        val height = lines.size
-        val width = lines.first().length
-
-        val lookup = mutableMapOf<Pair<Int, Int>, Int>()
-
-        var visible = 0
-        map
-            .lineSequence()
-            .forEachIndexed { y, row ->
-                row.forEachIndexed { x, t ->
-                    lookup[x to y] = t.digitToInt()
-                }
+        val score = grid.flatMapIndexed { y, row ->
+            row.mapIndexed { x, tree ->
+                rays(grid, x, y)
+                    .map { rayScore(grid, tree, it) }
+                    .reduce { acc, i -> acc * i }
             }
-
-        val xs = mutableListOf<Int>()
-        lookup.entries.forEach { (pos, tree) ->
-            val x = pos.first
-            val y = pos.second
-            val up = (0 until y).reversed().filter { pos != x to it }.map { lookup[x to it]!! }
-            val down = (y until height).filter { pos != x to it }.map { lookup[x to it]!! }
-            val right = (x until width).filter { pos != it to y }.map { lookup[it to y]!! }
-            val left = (0 until x).reversed().filter { pos != it to y }.map { lookup[it to y]!! }
-
-//            println("$x $y $tree - UP $up - ${visible(up, tree)}- ${visible2(up, tree)}")
-//            println("$x $y $tree - DOWN $down - ${visible(down, tree)} - ${visible2(down, tree)} ")
-//            println("$x $y $tree - RIGHT $right - ${visible(right, tree)} - ${visible2(right, tree)} ")
-//            println("$x $y $tree - LEFT $left - ${visible(left, tree)} - ${visible2(left, tree)} ")
-
-            if (visible(up, tree) || visible(down, tree) || visible(right, tree) || visible(left, tree)) {
-                xs.add(visible2(up, tree) * visible2(down, tree) * visible2(left, tree) * visible2(right, tree))
-            }
-        }
-        println(xs.max())
+        }.max()
+        println(score)
     }
 
 
-//    part1(File("src", "Day08_test.txt"))
-//    part1(File("src", "Day08.txt"))
+    part1(File("src", "Day08_test.txt"))
+    part1(File("src", "Day08.txt"))
     part2(File("src", "Day08_test.txt"))
     part2(File("src", "Day08.txt"))
 
