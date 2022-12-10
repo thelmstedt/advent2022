@@ -1,24 +1,34 @@
 import java.io.File
 
 fun main() {
-    fun elves(file: File) = file
-        .readText().split("\n\n")
-        .filter { it.isNotBlank() }
-        .map { elf -> elf.lineSequence().filter { it.isNotBlank() }.sumOf { it.toInt() } }
-        .mapIndexed { index, i -> Pair(index + 1, i) }
 
-    fun part1(file: File) = elves(file)
-        .maxBy { it.second }
-        .second
+    fun part1(text: String) {
+        text.split("\n\n")
+            .filter { it.isNotBlank() }
+            .map { elf -> elf.lineSequence().filter { it.isNotBlank() }.sumOf { it.toInt() } }
+            .mapIndexed { index, i -> Pair(index + 1, i) }
+            .maxBy { it.second }
+            .second
+            .let { println(it) }
+    }
 
-    fun part2(file: File) = elves(file)
-        .sortedByDescending { it.second }
-        .take(3).sumOf { it.second }
+    fun part2(text: String) {
+        text.split("\n\n")
+            .filter { it.isNotBlank() }
+            .map { elf -> elf.lineSequence().filter { it.isNotBlank() }.sumOf { it.toInt() } }
+            .mapIndexed { index, i -> Pair(index + 1, i) }
+            .sortedByDescending { it.second }
+            .take(3).sumOf { it.second }
+            .let { println(it) }
+    }
 
-    println(part1(File("src", "Day01_test.txt")))
-    println(part1(File("src", "Day01.txt")))
+    val testInput = File("src", "Day01_test.txt").readText()
+    val input = File("src", "Day01.txt").readText()
 
-    println(part2(File("src", "Day01_test.txt")))
-    println(part2(File("src", "Day01.txt")))
+    part1(testInput)
+    part1(input)
+
+    part2(testInput)
+    part2(input)
 
 }
