@@ -1,102 +1,117 @@
 import java.io.File
 import kotlin.math.abs
 
+enum class Cardinal {
+    N, NE, E, SE, S, SW, W, NW
+}
+
+typealias Point = Pair<Int, Int>
+
+fun move(p: Point, dir: Cardinal): Pair<Int, Int> {
+    return when (dir) {
+        Cardinal.N -> p.first to p.second - 1
+        Cardinal.NE -> p.first + 1 to p.second - 1
+        Cardinal.E -> p.first + 1 to p.second
+        Cardinal.SE -> p.first + 1 to p.second + 1
+        Cardinal.S -> p.first to p.second + 1
+        Cardinal.SW -> p.first - 1 to p.second + 1
+        Cardinal.W -> p.first - 1 to p.second
+        Cardinal.NW -> p.first - 1 to p.second - 1
+    }
+}
+
+fun adjacent(p1: Point, p2: Point): Boolean {
+    val deltaX = abs(p1.first - p2.first)
+    val deltaY = abs(p1.second - p2.second)
+    return deltaX <= 1 && deltaY <= 1
+}
+
+fun relativeMove(head: Point, tail: Point, dir: String): Pair<Point, Point> {
+    val head1 = straight(dir, head)
+    return if (adjacent(head1, tail)) {
+        head1 to tail
+    } else {
+        head1 to tail(head1, tail)
+    }
+}
+
+private fun tail(relative: Point, tail: Point): Point {
+    val isWest = relative.first > tail.first
+    val isNorth = relative.second > tail.second
+    val NS = tail.first == relative.first
+    val EW = tail.second == relative.second
+    val tail1: Point = if (NS || EW) {
+        straight(
+            if (NS) {
+                if (isNorth) {
+                    "D"
+                } else {
+                    "U"
+                }
+            } else if (EW) {
+                if (isWest) {
+                    "R"
+                } else {
+                    "L"
+                }
+            } else {
+                error("WHAT")
+            }, tail
+        )
+    } else {
+        // diagonal
+        move(
+            tail, when (isWest to isNorth) {
+                (true to true) -> Cardinal.SE
+                (false to false) -> Cardinal.NW
+                (true to false) -> Cardinal.NE
+                (false to true) -> Cardinal.SW
+                else -> error("Bad")
+            }
+        )
+    }
+    return tail1
+}
+
+
+private fun straight(dir: String, head: Point): Pair<Int, Int> {
+    val head1 = when (dir) {
+        "U" -> move(head, Cardinal.N)
+        "R" -> move(head, Cardinal.E)
+        "D" -> move(head, Cardinal.S)
+        "L" -> move(head, Cardinal.W)
+        else -> error(dir)
+    }
+    return head1
+}
+
+
+
 fun main() {
 
-    fun adjacent(head: Pair<Int, Int>, tail: Pair<Int, Int>): Boolean {
-        return abs(head.first - tail.first) <= 1 && abs(head.second - tail.second) <= 1
-    }
+    fun part1(text: String) {
 
-    fun move(
-        dir: String,
-        head: Pair<Int, Int>,
-        tail: Pair<Int, Int>,
-        moveHead: Boolean = true,
-    ): Pair<Pair<Int, Int>, Pair<Int, Int>> {
-        var head1 = head
-        var tail1 = tail
-        when (dir) {
-            "U" -> {
-                if (moveHead) head1 = head1.first to head1.second - 1
-                if (!adjacent(head1, tail1)) {
-                    tail1 = head1.first to head1.second + 1
-                }
-            }
-
-            "R" -> {
-                if (moveHead) head1 = head1.first + 1 to head1.second
-                if (!adjacent(head1, tail1)) {
-                    tail1 = head1.first - 1 to head1.second
-                }
-            }
-
-            "D" -> {
-                if (moveHead) head1 = head1.first to head1.second + 1
-                if (!adjacent(head1, tail1)) {
-                    tail1 = head1.first to head1.second - 1
-                }
-            }
-
-            "L" -> {
-                if (moveHead) head1 = head1.first - 1 to head1.second
-                if (!adjacent(head1, tail1)) {
-                    tail1 = head1.first + 1 to head1.second
-                }
-            }
-
-            else -> error(dir)
-        }
-        return Pair(head1, tail1)
-    }
-
-
-    fun part1(file: File) {
-
-        val moves = file.readText()
+        val moves = text
             .lineSequence()
             .filter { it.isNotBlank() }
             .map { it.split(" ") }
             .map { it[0] to it[1].toInt() }
 
-        val heads = mutableSetOf<Pair<Int, Int>>() //x y
-        val tails = mutableSetOf<Pair<Int, Int>>() //x y
+        val tailPos = mutableSetOf<Pair<Int, Int>>() //x y
 
-        var head = 0 to 0 //x y
-        var tail = 0 to 0 // x y
-        heads.add(head)
-        tails.add(tail)
+        val rope = mutableListOf(0 to 6, 0 to 6)
+        tailPos.add(rope.last())
         moves.forEach { (dir, c) ->
             (0 until c).forEach { _ ->
-                val pair = move(dir, head, tail)
-                head = pair.first
-                tail = pair.second
-                heads.add(head)
-                tails.add(tail)
+                val (head1, tail1) = relativeMove(rope[0], rope[1], dir)
+                rope[0] = head1
+                rope[1] = tail1
+                tailPos.add(rope.last())
             }
-
         }
 
-        println(tails.size)
+        println(tailPos.size)
 
-    }
-
-    fun display(
-        tails: MutableList<Pair<Int, Int>>,
-        start: Pair<Int, Int>,
-        head: Pair<Int, Int>,
-    ) {
-        println("$head $tails")
-        val map = (0..30).map { ".".repeat(30).toCharArray().map { it.toString() }.toMutableList() }.toMutableList()
-        tails.forEachIndexed { index, pair ->
-            val (x, y) = pair
-            map[y][x] = index.toString()
-        }
-        map[start.second][start.first] = "S"
-        map[head.second][head.first] = "H"
-        map.forEach {
-            println(it.joinToString(""))
-        }
-        println("------------")
     }
 
     fun part2(text: String) {
@@ -105,68 +120,96 @@ fun main() {
             .lineSequence()
             .filter { it.isNotBlank() }
             .map { it.split(" ") }
-            .map { it[0] to it[1].toInt() }
-
-        val headPos = mutableSetOf<Pair<Int, Int>>() //x y
-        val tailPos = mutableSetOf<Pair<Int, Int>>() //x y
-
-        var head = 10 to 15 //x y
-        val start = head
-        val tails = (0 until 10).map { head }.toMutableList() // x y
-        headPos.add(head)
-        tailPos.add(head)
-        moves.forEach { (dir, c) ->
-            (0 until c).forEach { _ ->
-                val (head1, tail1) = move(dir, head, tails[0])
-                head = head1
-                tails[0] = tail1
-                headPos.add(head)
-                tails.forEach { tailPos.add(it) }
-
-                display(tails, start, head)
-
-                (0 until 10).forEach { i ->
-                    val first = tails[i]
-                    val second = tails.getOrNull(i + 1)
-
-                    if (second != null && !adjacent(first, second)) {
-                        val (_, second1) = move(dir, first, second, false)
-                        tails[i + 1] = second1
-
-                        headPos.add(head)
-                        tails.forEach { tailPos.add(it) }
-                    }
-                }
-
-
+            .map {
+                val dir = it[0]
+                dir to it[1].toInt()
             }
 
-            println(tailPos.size)
+        val tailPos = mutableSetOf<Pair<Int, Int>>() //x y
+
+        val start = 13 to 16
+        val rope = mutableListOf(start)
+        (0 until 9).forEach { _ -> rope.add(start) }
+
+        tailPos.add(rope.last())
+        moves.forEach { (dir, c) ->
+            (0 until c).forEach { _ ->
+                val (head1, tail1) = relativeMove(rope[0], rope[1], dir)
+                rope[0] = head1
+                rope[1] = tail1
+                (2 until 10).forEach { i ->
+                    val head = rope[i - 1]
+                    val tail = rope[i]
+                    if (!adjacent(head, tail)) {
+                        rope[i] = tail(head, tail)
+                    }
+                }
+                tailPos.add(rope.last())
+            }
+//            display(start, rope)
         }
 
+        println(tailPos.size)
 
     }
 
-//    part1(File("src", "Day09_test.txt"))
-//    part1(File("src", "Day09.txt"))
-//    part2(File("src", "Day09_test.txt").readText())
-//    part2(File("src", "Day09.txt").readText())
-
+    val testInput = File("src", "Day09_test.txt").readText()
+    val input = File("src", "Day09.txt").readText()
+    part1(testInput)
+    part1(input)
     part2(
         """
-    R 5
-    U 2
+R 5
+U 8
+L 8
+D 3
+R 17
+D 10
+L 25
+U 20
     """.trimIndent()
     )
+    part2(input)
 
-//    part2("""R 5
-//U 8
-//L 8
-//D 3
-//R 17
-//D 10
-//L 25
-//U 20
-//""")
 
+}
+
+
+
+fun display(
+    start: Pair<Int, Int>,
+    rope: List<Pair<Int, Int>>,
+) {
+    if (false) return
+    println("$rope")
+    val size = "..........................".length * 2
+    val map = (0..size).map { ".".repeat(size).toCharArray().map { it.toString() }.toMutableList() }.toMutableList()
+    rope.forEachIndexed { index, pair ->
+        val (x, y) = pair
+        map[y][x] = if (index == 0) "H" else index.toString()
+    }
+    map[start.second][start.first] = "S"
+    map.forEach {
+        println(it.joinToString(""))
+    }
+    println("------------")
+}
+
+fun displayPos(
+    start: Pair<Int, Int>,
+    rope: List<Pair<Int, Int>>,
+) {
+    if (false) return
+    println("$rope")
+    val size = "..........................".length * 2
+    val map = (0..size).map { ".".repeat(size).toCharArray().map { it.toString() }.toMutableList() }.toMutableList()
+    rope.forEachIndexed { index, pair ->
+        val (x, y) = pair
+        map[y][x] = "#"
+    }
+    map[start.second][start.first] = "S"
+    map.forEach {
+        println(it.joinToString(""))
+    }
+    println("------------")
 }
